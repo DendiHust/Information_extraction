@@ -1,2 +1,2 @@
-# Information_extraction
+# information_extraction
 信息抽取
