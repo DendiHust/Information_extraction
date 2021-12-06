@@ -8,7 +8,6 @@
 
 from os import path
 from typing import Dict, Optional, List, cast
-from numpy import broadcast
 from overrides import overrides
 import torch
 
@@ -16,7 +15,6 @@ from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.modules import Seq2SeqEncoder, TimeDistributed, TextFieldEmbedder
 from allennlp.modules import ConditionalRandomField, FeedForward
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
-
 
 from allennlp.models.model import Model
 from allennlp.nn.initializers import InitializerApplicator
@@ -56,14 +54,14 @@ class CrfTragger(Model):
 
     @overrides
     def make_output_human_readable(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        
+
         def decode_tags(tags):
             return [
                 self.vocab.get_token_from_index(tag, namespace='labels') for tag in tags
             ]
+
         output_dict["tags"] = [decode_tags(t) for t in output_dict["tags"]]
         return output_dict
-        
 
     def forward(self, tokens: Dict[str, torch.Tensor], labels: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         mask = get_text_field_mask(tokens)
