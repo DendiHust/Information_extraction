@@ -53,11 +53,16 @@ class TagReader(DatasetReader):
             tmp = convert_2_crf_example(item)
             text = tmp['text']
             labels = tmp['labels']
-            yield self.text_to_instance(text, labels)
+            yield self.text_to_instance(list(text), labels)
 
     @overrides
     def text_to_instance(self, tokens: List[str], labels: List[str] == None) -> Instance:
         fields: Dict[str, Field] = {}
+        if len(tokens) > self._max_length - 2:
+            tokens = tokens[:self._max_length - 2]
+            labels = labels[:self._max_length - 2]
+        tokens = ["[CLS]"] + tokens + ["[SEP]"]
+        labels = ["O"] + labels + ["O"]
         tokens = TextField([Token(w) for w in tokens], self._token_indexers)
         fields['tokens'] = tokens
         if labels:

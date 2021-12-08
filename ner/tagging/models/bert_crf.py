@@ -37,7 +37,10 @@ class BertCrf(Model):
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         pass
 
-    def forward(self, *inputs) -> Dict[str, torch.Tensor]:
+    def forward(self, tokens: Dict[str, torch.Tensor], labels: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+        print(tokens)
+
+
         pass
 
 
