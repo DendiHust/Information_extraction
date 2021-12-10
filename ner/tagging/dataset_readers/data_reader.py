@@ -19,6 +19,8 @@ from allennlp.data.tokenizers.token_class import Token
 from allennlp.data.token_indexers.single_id_token_indexer import SingleIdTokenIndexer
 from allennlp.data.token_indexers.pretrained_transformer_mismatched_indexer import \
     PretrainedTransformerMismatchedIndexer
+from allennlp.data.token_indexers.pretrained_transformer_indexer import PretrainedTransformerIndexer
+# from transformers.models.bert.tokenization_bert import BertTokenizer
 from allennlp.data.token_indexers.token_indexer import TokenIndexer
 from tagging.utils.data_util import convert_2_crf_example
 
@@ -41,7 +43,9 @@ class TagReader(DatasetReader):
         self._max_length = max_length
         self._model_type = model_type
         self._token_indexers = token_indexers or {
-            'tokens': PretrainedTransformerMismatchedIndexer('bert-base-chinese')
+            # 'tokens': PretrainedTransformerMismatchedIndexer('bert-base-chinese')
+            # 'tokens': PretrainedTransformerMismatchedIndexer('bert-base-chinese')
+            'tokens': PretrainedTransformerIndexer('bert-base-chinese')
         }
 
     @overrides

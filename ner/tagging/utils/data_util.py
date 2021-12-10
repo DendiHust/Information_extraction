@@ -10,7 +10,7 @@ def convert_2_crf_example(data_item: Dict):
     '''
     text = data_item['text']
     labels = ['O'] * len(text)
-    print(data_item)
+    # print(data_item)
     for entity_item in data_item['labels']:
         for t_index in range(entity_item[2], entity_item[3]):
             if t_index == entity_item[2]:

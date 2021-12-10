@@ -7,7 +7,7 @@
   "data_loader": {
     "batch_sampler": {
       "type": "bucket",
-      "batch_size": 3
+      "batch_size": 1
     }
   },
   "train_data_path": "data/raw_data/train.json",
@@ -27,7 +27,7 @@
     },
     "optimizer": {
       "type": "adam",
-      "lr": 0.003
+      "lr": 0.0003
     }
   }
 }
