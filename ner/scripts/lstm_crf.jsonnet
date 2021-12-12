@@ -16,8 +16,8 @@
       "batch_size": 10
     }
   },
-  "train_data_path": "data/rel_data_ner_train_data_tag.json",
-  "validation_data_path": "data/rel_data_ner_val_data_tag.json",
+  "train_data_path": "data/raw_data/tmp.json",
+  "validation_data_path": "data/raw_data/dev.json",
   "model": {
     "type": "crf_tragger",
     "embedder": {

@@ -29,8 +29,9 @@ class BertCrf(Model):
         super().__init__(vocab, **kwargs)
 
         self._bert_config = BertConfig.from_pretrained(bert_path)
-        self._bert_model = BertModel(self._bert_config)
         self._bert_config.num_labels = vocab.get_vocab_size('labels')
+        self._bert_model = BertModel(self._bert_config)
+
         self._classifier = torch.nn.Linear(
             in_features=self._bert_model.config.hidden_size, out_features=vocab.get_vocab_size('labels'))
         self._crf = ConditionalRandomField(vocab.get_vocab_size('labels'))

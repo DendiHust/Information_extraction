@@ -45,7 +45,7 @@ class TagReader(DatasetReader):
         self._token_indexers = token_indexers or {
             # 'tokens': PretrainedTransformerMismatchedIndexer('bert-base-chinese')
             # 'tokens': PretrainedTransformerMismatchedIndexer('bert-base-chinese')
-            'tokens': PretrainedTransformerIndexer('bert-base-chinese')
+            'tokens': PretrainedTransformerIndexer('./bert-base-chinese')
         }
 
     @overrides
@@ -76,4 +76,6 @@ class TagReader(DatasetReader):
 
 if __name__ == '__main__':
     test_reader = TagReader()
-    dataset = list(test_reader.read('../../data/raw_data/dev.json'))
+    dataset = list(test_reader.read('../../data/raw_data/tmp.json'))[0]
+    for token, label in zip(dataset['tokens'], dataset['labels']):
+        print(f'{token}\t{label}')
