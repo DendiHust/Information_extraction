@@ -16,8 +16,9 @@ from allennlp.models.model import Model
 from allennlp.nn.initializers import InitializerApplicator
 from allennlp.nn import util
 from allennlp.modules.conditional_random_field import ConditionalRandomField
-from allennlp.nn.util import get_text_field_mask
+from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
+import torch.nn.functional as F
 
 
 @Model.register('bert_crf')
@@ -28,9 +29,9 @@ class BertCrf(Model):
                  **kwargs):
         super().__init__(vocab, **kwargs)
 
-        self._bert_config = BertConfig.from_pretrained(bert_path)
-        self._bert_config.num_labels = vocab.get_vocab_size('labels')
-        self._bert_model = BertModel(self._bert_config)
+        # self._bert_config = BertConfig.from_pretrained(bert_path)
+        # self._bert_config.num_labels = vocab.get_vocab_size('labels')
+        self._bert_model = BertModel.from_pretrained(bert_path)
 
         self._classifier = torch.nn.Linear(
             in_features=self._bert_model.config.hidden_size, out_features=vocab.get_vocab_size('labels'))
@@ -64,7 +65,7 @@ class BertCrf(Model):
         return output_dict
 
     def forward(self, tokens: Dict[str, torch.Tensor], labels: torch.Tensor = None) -> Dict[str, torch.Tensor]:
-        mask = get_text_field_mask(tokens)
+        mask = tokens['tokens']['mask']
 
         bert_embeddings, _ = self._bert_model(
             input_ids=tokens['tokens']['token_ids'],
@@ -73,25 +74,32 @@ class BertCrf(Model):
             return_dict=False,
         )
         # encoded = self._encoder(embedded, mask)
+
         classified = self._classifier(bert_embeddings)
-
-        viterbi_tags = self._crf.viterbi_tags(classified, mask)
-        viterbi_tags = [path for path, score in viterbi_tags]
-
-        # Just get the top tags and ignore the scores.
-        # predicted_tags = cast(List[List[int]], [x[0][0] for x in viterbi_tags])
-
-        broadcasted = self._broadcast_tags(viterbi_tags, classified)
-
-        output = {
-            'logits': classified,
-            'tags': viterbi_tags
-        }
-
+        class_probabilities = F.softmax(classified, dim=-1)
+        output = {"logits": classified, "class_probabilities": class_probabilities}
         if labels is not None:
-            log_likelihood = self._crf(classified, labels, mask)
+            loss = sequence_cross_entropy_with_logits(classified, labels, mask)
+            output['loss'] = loss
+            self._f1(classified, labels, mask)
 
-            output['loss'] = -log_likelihood
-            self._f1(broadcasted, labels, mask)
+        # viterbi_tags = self._crf.viterbi_tags(classified, mask)
+        # viterbi_tags = [path for path, score in viterbi_tags]
+        #
+        # # Just get the top tags and ignore the scores.
+        # # predicted_tags = cast(List[List[int]], [x[0][0] for x in viterbi_tags])
+        #
+        # broadcasted = self._broadcast_tags(viterbi_tags, classified)
+        #
+        # output = {
+        #     'logits': classified,
+        #     'tags': viterbi_tags
+        # }
+        #
+        # if labels is not None:
+        #     log_likelihood = self._crf(classified, labels, mask)
+        #
+        #     output['loss'] = -log_likelihood
+        #     self._f1(broadcasted, labels, mask)
 
         return output

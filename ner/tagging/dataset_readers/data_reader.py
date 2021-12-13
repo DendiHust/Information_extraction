@@ -23,6 +23,7 @@ from allennlp.data.token_indexers.pretrained_transformer_indexer import Pretrain
 # from transformers.models.bert.tokenization_bert import BertTokenizer
 from allennlp.data.token_indexers.token_indexer import TokenIndexer
 from tagging.utils.data_util import convert_2_crf_example
+from transformers.models.bert.tokenization_bert import  BertTokenizer
 
 
 from transformers.models.bert.tokenization_bert import BertTokenizer
@@ -47,6 +48,7 @@ class TagReader(DatasetReader):
             # 'tokens': PretrainedTransformerMismatchedIndexer('bert-base-chinese')
             'tokens': PretrainedTransformerIndexer('./bert-base-chinese')
         }
+        self._bert_tokenizer =BertTokenizer.from_pretrained('./bert-base-chinese')
 
     @overrides
     def _read(self, file_path) -> Iterable[Instance]:
@@ -67,7 +69,7 @@ class TagReader(DatasetReader):
             labels = labels[:self._max_length - 2]
         tokens = ["[CLS]"] + tokens + ["[SEP]"]
         labels = ["O"] + labels + ["O"]
-        tokens = TextField([Token(w) for w in tokens], self._token_indexers)
+        tokens = TextField([Token(w, text_id=self._bert_tokenizer.convert_tokens_to_ids(w)) for w in tokens], self._token_indexers)
         fields['tokens'] = tokens
         if labels:
             fields['labels'] = SequenceLabelField(labels, tokens)
@@ -75,7 +77,9 @@ class TagReader(DatasetReader):
 
 
 if __name__ == '__main__':
-    test_reader = TagReader()
-    dataset = list(test_reader.read('../../data/raw_data/tmp.json'))[0]
-    for token, label in zip(dataset['tokens'], dataset['labels']):
-        print(f'{token}\t{label}')
+    # test_reader = TagReader()
+    # dataset = list(test_reader.read('../../data/raw_data/tmp.json'))[0]
+    # for token, label in zip(dataset['tokens'], dataset['labels']):
+    #     print(f'{token}\t{label}')
+    tmp = BertTokenizer.from_pretrained('../..//bert-base-chinese')
+    print(tmp.convert_tokens_to_ids('我'))
