@@ -13,6 +13,7 @@ from allennlp.data.vocabulary import Vocabulary
 from transformers.models.bert.modeling_bert import BertModel
 from transformers.models.bert.configuration_bert import BertConfig
 from allennlp.models.model import Model
+from allennlp.modules.text_field_embedders import  TextFieldEmbedder
 from allennlp.nn.initializers import InitializerApplicator
 from allennlp.nn import util
 from allennlp.modules.conditional_random_field import ConditionalRandomField
@@ -25,17 +26,21 @@ import torch.nn.functional as F
 class BertCrf(Model):
     def __init__(self, vocab: Vocabulary,
                  bert_path: str,
+                 embedder: TextFieldEmbedder,
+                 model_type:str = 'bert',
                  initializer: InitializerApplicator = InitializerApplicator(),
                  **kwargs):
         super().__init__(vocab, **kwargs)
 
-        # self._bert_config = BertConfig.from_pretrained(bert_path)
-        # self._bert_config.num_labels = vocab.get_vocab_size('labels')
-        self._bert_model = BertModel.from_pretrained(bert_path)
+
+        # self._bert_model = BertModel.from_pretrained(bert_path)
+        self._embedder = embedder
 
         self._classifier = torch.nn.Linear(
-            in_features=self._bert_model.config.hidden_size, out_features=vocab.get_vocab_size('labels'))
+            in_features=self._embedder.get_output_dim(), out_features=vocab.get_vocab_size('labels'))
+
         self._crf = ConditionalRandomField(vocab.get_vocab_size('labels'))
+
         self._f1 = SpanBasedF1Measure(vocab, 'labels')
 
         initializer(self)
@@ -65,17 +70,20 @@ class BertCrf(Model):
         return output_dict
 
     def forward(self, tokens: Dict[str, torch.Tensor], labels: torch.Tensor = None) -> Dict[str, torch.Tensor]:
-        mask = tokens['tokens']['mask']
+        # mask = tokens['tokens']['mask']
+        # bert_embeddings, _ = self._bert_model(
+        #     input_ids=tokens['tokens']['token_ids'],
+        #     token_type_ids=tokens['tokens']['type_ids'],
+        #     attention_mask=mask,
+        #     return_dict=False,
+        # )
+        mask = get_text_field_mask(tokens)
 
-        bert_embeddings, _ = self._bert_model(
-            input_ids=tokens['tokens']['token_ids'],
-            token_type_ids=tokens['tokens']['type_ids'],
-            attention_mask=mask,
-            return_dict=False,
-        )
+        embedded = self._embedder(tokens)
+
         # encoded = self._encoder(embedded, mask)
 
-        classified = self._classifier(bert_embeddings)
+        classified = self._classifier(embedded)
         # class_probabilities = F.softmax(classified, dim=-1)
         # output = {"logits": classified, "class_probabilities": class_probabilities}
         # if labels is not None:

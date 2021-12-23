@@ -14,7 +14,15 @@
   "validation_data_path": "data/raw_data/dev.json",
   "model": {
     "type": "bert_crf",
-    "bert_path": "./bert-base-chinese"
+    "bert_path": "./bert-base-chinese",
+    "embedder": {
+      "token_embedders": {
+        "tokens": {
+          "type": "pretrained_transformer",
+          "model_name": "./bert-base-chinese"
+        }
+      }
+    }
   },
   "trainer": {
     "num_epochs": 40,
