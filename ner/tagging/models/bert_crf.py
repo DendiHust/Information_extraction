@@ -76,30 +76,30 @@ class BertCrf(Model):
         # encoded = self._encoder(embedded, mask)
 
         classified = self._classifier(bert_embeddings)
-        class_probabilities = F.softmax(classified, dim=-1)
-        output = {"logits": classified, "class_probabilities": class_probabilities}
-        if labels is not None:
-            loss = sequence_cross_entropy_with_logits(classified, labels, mask)
-            output['loss'] = loss
-            self._f1(classified, labels, mask)
-
-        # viterbi_tags = self._crf.viterbi_tags(classified, mask)
-        # viterbi_tags = [path for path, score in viterbi_tags]
-        #
-        # # Just get the top tags and ignore the scores.
-        # # predicted_tags = cast(List[List[int]], [x[0][0] for x in viterbi_tags])
-        #
-        # broadcasted = self._broadcast_tags(viterbi_tags, classified)
-        #
-        # output = {
-        #     'logits': classified,
-        #     'tags': viterbi_tags
-        # }
-        #
+        # class_probabilities = F.softmax(classified, dim=-1)
+        # output = {"logits": classified, "class_probabilities": class_probabilities}
         # if labels is not None:
-        #     log_likelihood = self._crf(classified, labels, mask)
-        #
-        #     output['loss'] = -log_likelihood
-        #     self._f1(broadcasted, labels, mask)
+        #     loss = sequence_cross_entropy_with_logits(classified, labels, mask)
+        #     output['loss'] = loss
+        #     self._f1(classified, labels, mask)
+
+        viterbi_tags = self._crf.viterbi_tags(classified, mask)
+        viterbi_tags = [path for path, score in viterbi_tags]
+
+        # Just get the top tags and ignore the scores.
+        # predicted_tags = cast(List[List[int]], [x[0][0] for x in viterbi_tags])
+
+        broadcasted = self._broadcast_tags(viterbi_tags, classified)
+
+        output = {
+            'logits': classified,
+            'tags': viterbi_tags
+        }
+
+        if labels is not None:
+            log_likelihood = self._crf(classified, labels, mask)
+
+            output['loss'] = -log_likelihood
+            self._f1(broadcasted, labels, mask)
 
         return output
