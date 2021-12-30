@@ -15,6 +15,7 @@
   "model": {
     "type": "tagger",
     "dropout": 0.3,
+    "use_crf": false,
     "embedder": {
       "token_embedders": {
         "tokens": {

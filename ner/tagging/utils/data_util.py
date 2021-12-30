@@ -2,7 +2,7 @@
 from typing import Dict, Text
 
 
-def convert_2_crf_example(data_item: Dict):
+def convert_2_tagger_example(data_item: Dict):
     '''
     description: 将元数据转为序列标注的格式
     param {*}
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     with open(Path.cwd().joinpath('ner', 'data', 'raw_data', 'dev.json'), mode='r', encoding='utf8') as f:
         import json
         data_ = json.load(f)
-        tmp = convert_2_crf_example(data_[0])
+        tmp = convert_2_tagger_example(data_[0])
         for t, l in zip(tmp['text'], tmp['labels']):
             print(f'{t}\t{l}')
         

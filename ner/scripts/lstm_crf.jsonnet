@@ -1,6 +1,6 @@
 {
   "dataset_reader": {
-    "type": "emr_ner",
+    "type": "tagger_reader",
     "token_indexers": {
       "tokens": {
         "type": "single_id",
@@ -13,13 +13,13 @@
   "data_loader": {
     "batch_sampler": {
       "type": "bucket",
-      "batch_size": 10
+      "batch_size": 32
     }
   },
-  "train_data_path": "data/raw_data/tmp.json",
+  "train_data_path": "data/raw_data/train.json",
   "validation_data_path": "data/raw_data/dev.json",
   "model": {
-    "type": "crf_tragger",
+    "type": "tagger",
     "embedder": {
       "token_embedders": {
         "tokens": {
@@ -40,7 +40,7 @@
   "trainer": {
     "num_epochs": 40,
     "patience": 10,
-    "cuda_device": -1,
+    "cuda_device": 1,
     "grad_clipping": 5.0,
     "validation_metric": "-loss",
     "checkpointer": {

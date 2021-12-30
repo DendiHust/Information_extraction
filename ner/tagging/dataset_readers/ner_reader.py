@@ -13,7 +13,7 @@ from allennlp.data.fields import Field, SequenceLabelField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Token
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
-from tagging.utils.data_util import convert_2_crf_example
+from tagging.utils.data_util import convert_2_tagger_example
 import json
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class NERReader(DatasetReader):
         with open(file_path, mode='r', encoding='utf8') as f:
             tmp_data = json.load(f)
         for item in tmp_data:
-            tmp = convert_2_crf_example(item)
+            tmp = convert_2_tagger_example(item)
             text = tmp['text']
             labels = tmp['labels']
             yield self.text_to_instance(text, labels)
