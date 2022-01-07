@@ -20,14 +20,14 @@
       "num_layers": 3,
       "hidden_dims": [384, 142, 2],
       "activations": "relu",
-      "dropout": 0.3
+      "dropout": 0.0
     },
     "end_feedforward":{
       "input_dim": 768,
       "num_layers": 3,
       "hidden_dims": [384, 142, 2],
       "activations": "relu",
-      "dropout": 0.3
+      "dropout": 0.0
     },
     "embedder": {
       "token_embedders": {
