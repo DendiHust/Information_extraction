@@ -42,8 +42,9 @@ def convert_2_mrc_exapmple(data_item: Dict, question_dict: Dict = None) -> Dict:
         tmp_label['question_type'] = _type
 
         for _label in label_dict[_type]:
+
             start_labels[_label[0]] = 1
-            end_labels[_label[1]] = 1
+            end_labels[_label[1] - 1] = 1
 
         tmp_label['start_labels'] = start_labels
         tmp_label['end_labels'] = end_labels
@@ -69,5 +70,14 @@ if __name__ == '__main__':
     with open('../../data/mid_data/mrc_ent2id.json', mode='r', encoding='utf8') as f:
         quesion_dict = json.load(f)
 
-    print(convert_2_mrc_exapmple(data[0], quesion_dict))
+    tmp_data = convert_2_mrc_exapmple(data[0], quesion_dict)
+    # print(tmp_data)
+    from tagging.utils.span_util import mrc_decode
+    decode = mrc_decode(tmp_data['labels'][2]['start_labels'], tmp_data['labels'][2]['end_labels'], tmp_data['labels'][2]['question_type'])
+    print(decode)
+
+
+
+
+
     

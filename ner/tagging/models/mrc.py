@@ -10,10 +10,12 @@ import torch
 from overrides import overrides
 from typing import Dict, List, Optional
 from allennlp.data.vocabulary import Vocabulary
+from allennlp.data.fields import MetadataField
 from allennlp.models.model import Model
 from allennlp.nn.initializers import InitializerApplicator
 from allennlp.modules.text_field_embedders import TextFieldEmbedder
 from allennlp.modules.feedforward import FeedForward
+from tagging.metrics.mrc_f1_measure import MRCF1Measure
 from allennlp.nn.util import get_text_field_mask
 from torch import nn
 
@@ -43,10 +45,18 @@ class MRC(Model):
 
         self._criterion = nn.CrossEntropyLoss()
 
+        self._f1 = MRCF1Measure()
+
         initializer(self)
 
 
-    def forward(self, question_with_context: Dict[str, Dict[str, torch.Tensor]], start_labels = None, end_labels = None) -> Dict[str, torch.Tensor]:
+    def forward(
+            self,
+            question_with_context: Dict[str, Dict[str, torch.Tensor]],
+            start_labels: torch.Tensor = None,
+            end_labels: torch.Tensor = None,
+            metadata: MetadataField = None
+    ) -> Dict[str, torch.Tensor]:
         mask = get_text_field_mask(question_with_context)
         embedded = self._embedder(question_with_context)
 
@@ -61,15 +71,26 @@ class MRC(Model):
         active_start_logits = start_logits[active_loss]
         active_end_logits = end_logits[active_loss]
 
+
         if start_labels is not None:
             active_start_labels = start_labels[active_loss]
             active_end_labels = end_labels[active_loss]
             start_loss = self._criterion(active_start_logits, active_start_labels)
             end_loss = self._criterion(active_end_logits, active_end_labels)
             output_dict['loss'] = start_loss + end_loss
+            self._f1(start_logits, end_logits, start_labels, end_labels, metadata, mask)
 
+        # if start_labels is not None:
+        #     start_loss = self._criterion(start_logits.view(-1, 2), start_labels.view(-1))
+        #     end_loss = self._criterion(end_logits.view(-1, 2), end_labels.view(-1))
+        #     output_dict['loss'] = start_loss + end_loss
+        #     self._f1(start_logits, end_logits, start_labels, end_labels, metadata, mask)
 
         return output_dict
+
+    @overrides
+    def get_metrics(self, reset: bool) -> Dict[str, float]:
+        return self._f1.get_metric(reset)
 
 
 

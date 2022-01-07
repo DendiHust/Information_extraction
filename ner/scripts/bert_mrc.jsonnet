@@ -7,25 +7,25 @@
   "data_loader": {
     "batch_sampler": {
       "type": "bucket",
-      "batch_size": 1
+      "batch_size": 15
     }
   },
-  "train_data_path": "data/raw_data/tmp.json",
-  "validation_data_path": "data/raw_data/tmp.json",
+  "train_data_path": "data/raw_data/train.json",
+  "validation_data_path": "data/raw_data/dev.json",
   "model": {
     "type": "mrc",
     "dropout": 0.3,
     "start_feedforward":{
       "input_dim": 768,
-      "num_layers": 2,
-      "hidden_dims": [384, 2],
+      "num_layers": 3,
+      "hidden_dims": [384, 142, 2],
       "activations": "relu",
       "dropout": 0.3
     },
     "end_feedforward":{
       "input_dim": 768,
-      "num_layers": 2,
-      "hidden_dims": [384, 2],
+      "num_layers": 3,
+      "hidden_dims": [384, 142, 2],
       "activations": "relu",
       "dropout": 0.3
     },
@@ -47,6 +47,13 @@
     "checkpointer": {
         "keep_most_recent_by_count": 3
     },
+    "callbacks": [
+            {
+                "type": "tensorboard",
+                 "serialization_dir": "./summary"
+            
+             }
+     ],
     "optimizer": {
             "type": "huggingface_adamw",
             "lr": 5e-5,

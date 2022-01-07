@@ -6,9 +6,11 @@
 '''
 import torch
 from allennlp.training.metrics import Metric
+from allennlp.nn.util import get_lengths_from_binary_sequence_mask
 from overrides import overrides
-from typing import Dict, List, Any, Set
+from typing import Dict, Optional, Any, Set
 from collections import defaultdict
+from tagging.utils.span_util import mrc_decode
 
 @Metric.register('mrc_f1')
 class MRCF1Measure(Metric):
@@ -25,8 +27,45 @@ class MRCF1Measure(Metric):
             end_predictions: torch.Tensor,
             gold_start_labels: torch.Tensor,
             gold_end_labels: torch.Tensor,
+            metadata: dict,
+            mask: Optional[torch.BoolTensor] = None
         ):
-        pass
+        start_predictions, end_predictions, gold_start_labels, gold_start_labels, mask = self.detach_tensors(
+            start_predictions, end_predictions, gold_start_labels, gold_start_labels, mask
+        )
+        start_predictions_tmp = start_predictions.cpu().numpy().argmax(-1)
+        end_predictions_tmp = end_predictions.cpu().numpy().argmax(-1)
+
+        sequence_lengths = get_lengths_from_binary_sequence_mask(mask)
+        batch_size = start_predictions.shape[0]
+        for i in range(batch_size):
+            length = sequence_lengths[i]
+            span_type = metadata[i]['question_type']
+            start_index = len(metadata[i]['question']) + 2
+
+            if length == 0:
+                continue
+
+            sequence_start_prediction = start_predictions_tmp[i, start_index: length].tolist()
+            sequence_end_prediction = end_predictions_tmp[i, start_index: length].tolist()
+
+
+            sequence_start_gold_label = gold_start_labels[i, start_index: length].tolist()
+            sequence_end_gold_label = gold_end_labels[i, start_index: length].tolist()
+
+            predicted_spans = mrc_decode(sequence_start_prediction,sequence_end_prediction,span_type)
+            gold_spans = mrc_decode(sequence_start_gold_label,sequence_end_gold_label,span_type)
+
+            for span in predicted_spans:
+                if span in gold_spans:
+                    self._true_positives[span[0]] += 1
+                    gold_spans.remove(span)
+                else:
+                    self._false_positives[span[0]] += 1
+
+            for span in gold_spans:
+                self._false_negatives[span[0]] += 1
+
 
 
     @overrides

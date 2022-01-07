@@ -10,9 +10,9 @@ import logging
 
 import torch
 from overrides import overrides
-from typing import Dict, List,Optional,Iterable
+from typing import Dict, List, Optional, Iterable
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
-from allennlp.data.fields import Field, TextField, ArrayField
+from allennlp.data.fields import Field, TextField, ArrayField, MetadataField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers.token_class import Token
 from allennlp.data.token_indexers.pretrained_transformer_indexer import PretrainedTransformerIndexer
@@ -47,13 +47,21 @@ class MRCReader(DatasetReader):
             context = tmp_item['text']
             for _labels in tmp_item['labels']:
                 question = _labels['question']
+                question_type = _labels['question_type']
                 start_labels = _labels['start_labels']
                 end_labels = _labels['end_labels']
-                yield self.text_to_instance(context, question, start_labels, end_labels)
+                yield self.text_to_instance(context, question, start_labels, end_labels, question_type)
 
 
     @overrides
-    def text_to_instance(self, context: List[str], question: List[str], start_labels: List[int] = None, end_labels: List[int] = None) -> Instance:
+    def text_to_instance(
+            self,
+            context: List[str],
+            question: List[str],
+            start_labels: List[int] = None,
+            end_labels: List[int] = None,
+            question_type: str = None
+    ) -> Instance:
         fields: Dict[str, Field] = {}
         _limit_length = self._max_length - len(question) - 3
 
@@ -73,9 +81,18 @@ class MRCReader(DatasetReader):
         tokens = TextField(self._tokenizer.add_special_tokens(question_tokens, context_tokens))
 
         fields['question_with_context'] = tokens
+
+        metadata = {
+            'question': question,
+            'question_type': question_type,
+            'context': context
+        }
+        fields['metadata'] = MetadataField(metadata)
+
         if start_labels is not None:
             fields['start_labels'] = ArrayField(torch.from_numpy(np.array(start_labels)).long())
             fields['end_labels'] = ArrayField(torch.from_numpy(np.array(end_labels)).long())
+
 
 
         return Instance(fields)
