@@ -60,7 +60,9 @@
             "correct_bias": false,
             "weight_decay": 0.01,
             "parameter_groups": [
-              [["bias", "LayerNorm.bias", "LayerNorm.weight", "layer_norm.weight"], {"weight_decay": 0.0}]
+              [["^_embedder*bias", "^_embedder*LayerNorm.bias", "^_embedder*LayerNorm.weight", "^_embedder*layer_norm.weight"], {"weight_decay": 0.0}],
+              [["^_start"],{"lr": 5e-4}],
+              [["^_end"],{"lr": 5e-4}]
             ]
         },
 
