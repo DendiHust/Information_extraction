@@ -41,3 +41,7 @@ def half2full(s):
         num = chr(num)
         n += num
     return n
+
+if __name__ == '__main__':
+    print(full2half('“你好（）”'))
+    print('“你好（）”')

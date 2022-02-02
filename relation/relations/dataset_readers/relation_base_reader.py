@@ -27,6 +27,7 @@ class ReReader(DatasetReader):
                  config_file_path: str,
                  max_length: int = 512,
                  negative_sample_number: int = 10,
+                 use_entity_tag = True,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
@@ -42,8 +43,9 @@ class ReReader(DatasetReader):
         # 关系label 与 index 信息
         self._rel_label_2_id = rel_info_dict['rel_label_2_id']
         self._rel_id_2_label = rel_info_dict['rel_id_2_label']
-        # 实体标签信息
+        # 实体标签信息  type: type_code
         self._ner_tag_info_dict = rel_info_dict['ner_tag_info']
+        # 实体标签信息  type_code: type
         self._ner_tag_info_dict_rev = {
             v: k for k, v in self._ner_tag_info_dict.items()}
         # 实体 label 与 index 信息
@@ -53,6 +55,8 @@ class ReReader(DatasetReader):
         self._max_length = max_length
         self._token_indexers = token_indexers or {
             'tokens': SingleIdTokenIndexer(lowercase_tokens=True)}
+        self._use_entity_tag = use_entity_tag
+
 
 
 
@@ -88,6 +92,9 @@ class ReReader(DatasetReader):
             limit_index = min(negative_sampling_number, len(sample_list))
 
             for tmp_v in sample_list[:limit_index]:
+                # 如果两个实体之间的距离超过 30就跳过
+                if abs(tmp_v[0] - k[0]) > 30:
+                    continue
                 neg_sample_result.append({
                     'start_entity_start_pos': k[0],
                     'start_entity_end_pos': k[1],
@@ -108,7 +115,7 @@ class ReReader(DatasetReader):
                                    end_entity_type: int,
                                    seq_length: int = 512) -> List[int]:
 
-        seq_entity_tags = ['o'] * seq_length
+        seq_entity_tags = [0] * seq_length
         for i in range(start_entity_pos[0], start_entity_pos[1]):
             seq_entity_tags[i] = start_entity_type
 
