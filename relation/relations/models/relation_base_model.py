@@ -16,6 +16,7 @@ from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.modules import Seq2SeqEncoder, TextFieldEmbedder
 from allennlp.modules import FeedForward
 from allennlp.nn.util import get_text_field_mask
+from allennlp.nn.initializers import InitializerApplicator
 
 from allennlp.models.model import Model
 from allennlp.training.metrics import CategoricalAccuracy, FBetaMeasure
@@ -27,20 +28,29 @@ class RelationBaseModel(Model):
 
     def __init__(self, vocab: Vocabulary,
                  embedder: TextFieldEmbedder,
-                 entity_embedder: Embedding,
-                 encoder: Seq2SeqEncoder,
-                 attention: Seq2SeqEncoder,
+                 encoder: Optional[Seq2SeqEncoder] = None,
+                 dropout: Optional[float] = None,
                  loss_func: str = None,
+                 initializer: InitializerApplicator = InitializerApplicator(),
                  **kwargs
                  ) -> None:
         super().__init__(vocab, **kwargs)
 
         self._embedder = embedder
-        self._entity_embedder = entity_embedder
-        self._encoder = encoder
-        self._attention = attention
-        self._feed_fward = torch.nn.Linear(
-            in_features=attention.get_output_dim(), out_features=vocab.get_vocab_size('labels'))
+        if encoder:
+            self._encoder = encoder
+        else:
+            self._encoder = None
+        if dropout:
+            self._dropout = torch.nn.Dropout()
+        else:
+            self._dropout = None
+        output_dim = self._embedder.get_output_dim()
+        if self._encoder:
+            output_dim = self._encoder.get_output_dim()
+
+        self._feedforward = torch.nn.Linear(
+            in_features=output_dim * 2, out_features=vocab.get_vocab_size('labels'))
         self._all_f1 = FBetaMeasure(average='micro')
         self._f1 = FBetaMeasure()
         # self._metrics = {
@@ -51,6 +61,8 @@ class RelationBaseModel(Model):
             self._loss = FocalLoss()
         else:
             self._loss = torch.nn.CrossEntropyLoss()
+
+        initializer(self)
 
     @overrides
     def get_metrics(self, reset: bool) -> Dict[str, float]:
@@ -72,22 +84,22 @@ class RelationBaseModel(Model):
         return output
 
     def forward(self, tokens: Dict[str, torch.Tensor],
-                seq_entity_tags: Dict[str, torch.Tensor],
+                subj_start_index: torch.Tensor,
+                obj_start_index: torch.Tensor,
                 labels: torch.Tensor = None) -> Dict[str, torch.Tensor]:
 
         mask = get_text_field_mask(tokens)
-        token_embedded = self._embedder(tokens)
-        entity_embedded = self._entity_embedder(seq_entity_tags)
+        sequence_output = self._embedder(tokens)
+        if self._encoder:
+            sequence_output = self._encoder(sequence_output, mask)
+        if self._dropout:
+            sequence_output = self._dropout(sequence_output)
 
-        inputs = torch.cat([token_embedded, entity_embedded], dim=-1)
+        subj_output = torch.cat([a[i].unsqueeze(0) for a, i in zip(sequence_output, subj_start_index)])
+        obj_output = torch.cat([a[i].unsqueeze(0) for a, i in zip(sequence_output, obj_start_index)])
+        rep = torch.cat([subj_output, obj_output], dim=1)
 
-        encoded = self._encoder(inputs, mask)
-
-        attened = self._attention(encoded, mask)
-
-        attened = torch.mean(attened, dim=1)
-
-        logits = self._feed_fward(attened)
+        logits = self._feedforward(rep)
 
         probs = F.softmax(logits, dim=-1)
 
@@ -104,7 +116,6 @@ class RelationBaseModel(Model):
 
         return output
 
-
     @overrides
     def make_output_human_readable(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         predictions = output_dict["probs"]
@@ -118,4 +129,3 @@ class RelationBaseModel(Model):
             classes.append(label_str)
         output_dict["predict_label"] = classes
         return output_dict
-

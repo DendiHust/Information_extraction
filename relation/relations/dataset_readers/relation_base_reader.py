@@ -6,6 +6,8 @@
  # @ Description:
  '''
 import logging
+
+import torch
 from allennlp.data.fields.array_field import ArrayField
 from overrides import overrides
 from typing import Dict, List, Optional, Iterator, Tuple, Set
@@ -13,11 +15,11 @@ from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.fields import LabelField, TextField, Field, SequenceLabelField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Token
-from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
+from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer, PretrainedTransformerIndexer
 import numpy as np
+from relations.utils import data_util
 
 import json
-
 
 
 @DatasetReader.register("relation_base_reader")
@@ -27,7 +29,8 @@ class ReReader(DatasetReader):
                  config_file_path: str,
                  max_length: int = 512,
                  negative_sample_number: int = 10,
-                 use_entity_tag = True,
+                 use_entity_tag=True,
+                 pretrained_model_path: Optional[str] = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
@@ -57,8 +60,12 @@ class ReReader(DatasetReader):
             'tokens': SingleIdTokenIndexer(lowercase_tokens=True)}
         self._use_entity_tag = use_entity_tag
 
-
-
+        if pretrained_model_path is not None:
+            self._pretrained_model_path = pretrained_model_path
+            self._token_indexers = {'tokens': PretrainedTransformerIndexer(self._pretrained_model_path)}
+        else:
+            self._pretrained_model_path = None
+            self._token_indexers = token_indexers or {'tokens': SingleIdTokenIndexer(lowercase_tokens=True)}
 
     def __negative_sampling(self, info_dict: Dict, negative_sampling_number: int = 10) -> Dict:
         # (entity_start_pos, entity_end_pos, entity_type, entity_text)
@@ -130,9 +137,10 @@ class ReReader(DatasetReader):
 
         for item in tmp_data:
             item = self.__negative_sampling(item, self._negative_sample_number)
-            tokens = list(item['text'][:self._max_length])
+            # tokens = list(item['text'][:self._max_length])
             for rel_item in item['relation_list']:
-                if rel_item['end_entity_end_pos'] >= self._max_length or rel_item['start_entity_end_pos'] >= self._max_length:
+                if rel_item['end_entity_end_pos'] >= self._max_length or rel_item[
+                    'start_entity_end_pos'] >= self._max_length:
                     continue
 
                 start_entity_pos = (
@@ -141,27 +149,49 @@ class ReReader(DatasetReader):
                 end_entity_pos = (
                     rel_item['end_entity_start_pos'], rel_item['end_entity_end_pos'])
                 end_entity_type = rel_item['end_entity_type']
-                labels = 'None' if rel_item['relation_type'] == 'None' else self._rel_tag_info_dict[rel_item['relation_type']]
-                yield self.text_to_instance(tokens, start_entity_pos, start_entity_type, end_entity_pos, end_entity_type, labels)
+                labels = 'None' if rel_item['relation_type'] == 'None' else self._rel_tag_info_dict[
+                    rel_item['relation_type']]
+                yield self.text_to_instance(item['text'], start_entity_pos, start_entity_type, end_entity_pos,
+                                            end_entity_type, labels)
 
     @overrides
-    def text_to_instance(self, tokens: List[str],
+    def text_to_instance(self, tokens: str,
                          start_entity_pos: Tuple[int, int],
                          start_entity_type: str,
                          end_entity_pos: Tuple[int, int],
                          end_entity_type: str,
                          labels: str = None) -> Instance:
         fields: Dict[str, Field] = {}
+        data = data_util.get_text_with_entity_type_tag(tokens, start_entity_pos[0], start_entity_pos[1],
+                                                       self._ner_tag_info_dict[start_entity_type], end_entity_pos[0],
+                                                       end_entity_pos[1],
+                                                       self._ner_tag_info_dict[end_entity_type])
+        tokens = data['tokens']
+        subj_start_index = data['subj_start_index']
+        subj_end_index = data['subj_end_index']
+        obj_start_index = data['obj_start_index']
+        obj_end_index = data['obj_end_index']
+
+        # 如果使用bert模型，则index+1
+        if self._pretrained_model_path:
+            subj_start_index += 1
+            subj_end_index += 1
+            obj_start_index += 1
+            obj_end_index += 1
+
         tokens = TextField([Token(w) for w in tokens], self._token_indexers)
         fields['tokens'] = tokens
 
-        start_entity_type_id = self._ner_tag_info_dict[start_entity_type]
-        end_entity_type_id = self._ner_tag_info_dict[end_entity_type]
+        fields['subj_start_index'] = ArrayField(torch.from_numpy(np.array(subj_start_index)).long())
+        fields['obj_start_index'] = ArrayField(torch.from_numpy(np.array(obj_start_index)).long())
 
-        seq_entity_tags = self.__get_sequence_entity_tags(
-            start_entity_pos, start_entity_type_id, end_entity_pos, end_entity_type_id, len(tokens))
-        fields['seq_entity_tags'] = SequenceLabelField(
-            seq_entity_tags, tokens, label_namespace='seq_entity_tags')
+        # start_entity_type_id = self._ner_tag_info_dict[start_entity_type]
+        # end_entity_type_id = self._ner_tag_info_dict[end_entity_type]
+
+        # seq_entity_tags = self.__get_sequence_entity_tags(
+        #     start_entity_pos, start_entity_type_id, end_entity_pos, end_entity_type_id, len(tokens))
+        # fields['seq_entity_tags'] = SequenceLabelField(
+        #     seq_entity_tags, tokens, label_namespace='seq_entity_tags')
 
         if labels:
             fields['labels'] = LabelField(labels)

@@ -592,3 +592,4 @@ cython_debug/
 /bert-base-chinese/
 /data/raw/rel_train_data.json
 /data/raw/rel_val_data.json
+/tmp/

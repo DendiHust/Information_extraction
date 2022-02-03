@@ -1,0 +1,122 @@
+[
+  {
+    "ner_list": [
+      {
+        "entity_end_pos": 4,
+        "entity_start_pos": 2,
+        "entity_text": "胸闷",
+        "entity_type": "症状"
+      },
+      {
+        "entity_end_pos": 7,
+        "entity_start_pos": 5,
+        "entity_text": "心悸",
+        "entity_type": "症状"
+      },
+      {
+        "entity_end_pos": 2,
+        "entity_start_pos": 0,
+        "entity_text": "反复",
+        "entity_type": "频率"
+      },
+      {
+        "entity_end_pos": 11,
+        "entity_start_pos": 7,
+        "entity_text": "20余年",
+        "entity_type": "持续时长"
+      },
+      {
+        "entity_end_pos": 17,
+        "entity_start_pos": 14,
+        "entity_text": "1月余",
+        "entity_type": "持续时长"
+      },
+      {
+        "entity_end_pos": 14,
+        "entity_start_pos": 12,
+        "entity_text": "再发",
+        "entity_type": "临床过程"
+      }
+    ],
+    "relation_list": [
+      {
+        "end_entity_end_pos": 17,
+        "end_entity_start_pos": 14,
+        "end_entity_text": "1月余",
+        "end_entity_type": "持续时长",
+        "relation_type": "持续时间",
+        "start_entity_end_pos": 14,
+        "start_entity_start_pos": 12,
+        "start_entity_text": "再发",
+        "start_entity_type": "临床过程"
+      },
+      {
+        "end_entity_end_pos": 11,
+        "end_entity_start_pos": 7,
+        "end_entity_text": "20余年",
+        "end_entity_type": "持续时长",
+        "relation_type": "持续时间",
+        "start_entity_end_pos": 7,
+        "start_entity_start_pos": 5,
+        "start_entity_text": "心悸",
+        "start_entity_type": "症状"
+      },
+      {
+        "end_entity_end_pos": 11,
+        "end_entity_start_pos": 7,
+        "end_entity_text": "20余年",
+        "end_entity_type": "持续时长",
+        "relation_type": "持续时间",
+        "start_entity_end_pos": 4,
+        "start_entity_start_pos": 2,
+        "start_entity_text": "胸闷",
+        "start_entity_type": "症状"
+      },
+      {
+        "end_entity_end_pos": 14,
+        "end_entity_start_pos": 12,
+        "end_entity_text": "再发",
+        "end_entity_type": "临床过程",
+        "relation_type": "临床过程",
+        "start_entity_end_pos": 7,
+        "start_entity_start_pos": 5,
+        "start_entity_text": "心悸",
+        "start_entity_type": "症状"
+      },
+      {
+        "end_entity_end_pos": 14,
+        "end_entity_start_pos": 12,
+        "end_entity_text": "再发",
+        "end_entity_type": "临床过程",
+        "relation_type": "临床过程",
+        "start_entity_end_pos": 4,
+        "start_entity_start_pos": 2,
+        "start_entity_text": "胸闷",
+        "start_entity_type": "症状"
+      },
+      {
+        "end_entity_end_pos": 4,
+        "end_entity_start_pos": 2,
+        "end_entity_text": "胸闷",
+        "end_entity_type": "症状",
+        "relation_type": "频率修饰",
+        "start_entity_end_pos": 2,
+        "start_entity_start_pos": 0,
+        "start_entity_text": "反复",
+        "start_entity_type": "频率"
+      },
+      {
+        "end_entity_end_pos": 7,
+        "end_entity_start_pos": 5,
+        "end_entity_text": "心悸",
+        "end_entity_type": "症状",
+        "relation_type": "频率修饰",
+        "start_entity_end_pos": 2,
+        "start_entity_start_pos": 0,
+        "start_entity_text": "反复",
+        "start_entity_type": "频率"
+      }
+    ],
+    "text": "反复胸闷、心悸20余年，再发1月余"
+  }
+]

@@ -55,7 +55,12 @@ def get_text_with_entity_type_tag(
     #     token_list.insert(start_entity_start_index, f"<S: {start_entity_type.upper()}>")
     #     token_list.insert(start_entity_end_index + 1, f"</S: {start_entity_type.upper()}>")
 
-    return {'tokens': token_list, 'subj_start_index': subj_start_index, 'obj_start_index': obj_start_index}
+    return {'tokens': token_list,
+            'subj_start_index': subj_start_index,
+            'subj_end_index': subj_end_index,
+            'obj_start_index': obj_start_index,
+            'obj_end_index': obj_end_index
+            }
 
 if __name__ == '__main__':
     text = "反复胸闷、心悸20余年，再发1月余"
