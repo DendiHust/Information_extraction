@@ -24,21 +24,21 @@ def get_text_with_entity_type_tag(
     for i, token in enumerate(text):
         if i == start_entity_start_index:
             subj_start_index = len(token_list)
-            token_list.append(f"<S: {start_entity_type.upper()}>")
+            token_list.append(f"<S:{start_entity_type.upper()}>")
 
         if i == end_entity_start_index:
             obj_start_index = len(token_list)
-            token_list.append(f"<O: {end_entity_type.upper()}>")
+            token_list.append(f"<O:{end_entity_type.upper()}>")
 
         token_list.append(token)
 
         if i == start_entity_end_index - 1:
             subj_end_index = len(token_list)
-            token_list.append(f"</S: {start_entity_type.upper()}>")
+            token_list.append(f"</S:{start_entity_type.upper()}>")
 
         if i == end_entity_end_index - 1:
             obj_end_index = len(token_list)
-            token_list.append(f"</O: {end_entity_type.upper()}>")
+            token_list.append(f"</O:{end_entity_type.upper()}>")
 
     # if end_entity_start_index > start_entity_end_index:
     #     end_entity_start_index += 2

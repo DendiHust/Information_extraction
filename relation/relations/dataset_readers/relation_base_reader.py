@@ -30,8 +30,8 @@ class ReReader(DatasetReader):
                  max_length: int = 512,
                  negative_sample_number: int = 10,
                  use_entity_tag=True,
-                 pretrained_model_path: Optional[str] = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
+                 use_pretrained_model=False,
                  **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -59,13 +59,9 @@ class ReReader(DatasetReader):
         self._token_indexers = token_indexers or {
             'tokens': SingleIdTokenIndexer(lowercase_tokens=True)}
         self._use_entity_tag = use_entity_tag
+        self._use_pretrained_model = use_pretrained_model
+        self._token_indexers = token_indexers or {'tokens': SingleIdTokenIndexer(lowercase_tokens=True)}
 
-        if pretrained_model_path is not None:
-            self._pretrained_model_path = pretrained_model_path
-            self._token_indexers = {'tokens': PretrainedTransformerIndexer(self._pretrained_model_path)}
-        else:
-            self._pretrained_model_path = None
-            self._token_indexers = token_indexers or {'tokens': SingleIdTokenIndexer(lowercase_tokens=True)}
 
     def __negative_sampling(self, info_dict: Dict, negative_sampling_number: int = 10) -> Dict:
         # (entity_start_pos, entity_end_pos, entity_type, entity_text)
@@ -173,11 +169,14 @@ class ReReader(DatasetReader):
         obj_end_index = data['obj_end_index']
 
         # 如果使用bert模型，则index+1
-        if self._pretrained_model_path:
+        if self._use_pretrained_model:
             subj_start_index += 1
             subj_end_index += 1
             obj_start_index += 1
             obj_end_index += 1
+            if len(tokens) > self._max_length - 2:
+                tokens = tokens[:self._max_length - 2]
+            tokens = ["[CLS]"] + tokens + ["[SEP]"]
 
         tokens = TextField([Token(w) for w in tokens], self._token_indexers)
         fields['tokens'] = tokens

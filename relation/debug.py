@@ -12,7 +12,7 @@ import sys
 
 from allennlp.commands import main
 
-config_file = "scripts/lstm.jsonnet"
+config_file = "scripts/bert.jsonnet"
 
 # Use overrides to train on CPU.
 overrides = json.dumps({"trainer": {"cuda_device": -1}})
