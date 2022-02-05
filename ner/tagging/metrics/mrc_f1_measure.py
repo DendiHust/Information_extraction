@@ -12,6 +12,7 @@ from typing import Dict, Optional, Any, Set
 from collections import defaultdict
 from tagging.utils.span_util import mrc_decode
 
+
 @Metric.register('mrc_f1')
 class MRCF1Measure(Metric):
 
@@ -29,7 +30,7 @@ class MRCF1Measure(Metric):
             gold_end_labels: torch.Tensor,
             metadata: dict,
             mask: Optional[torch.BoolTensor] = None
-        ):
+    ):
         start_predictions, end_predictions, gold_start_labels, gold_start_labels, mask = self.detach_tensors(
             start_predictions, end_predictions, gold_start_labels, gold_start_labels, mask
         )
@@ -49,12 +50,11 @@ class MRCF1Measure(Metric):
             sequence_start_prediction = start_predictions_tmp[i, start_index: length].tolist()
             sequence_end_prediction = end_predictions_tmp[i, start_index: length].tolist()
 
-
             sequence_start_gold_label = gold_start_labels[i, start_index: length].tolist()
             sequence_end_gold_label = gold_end_labels[i, start_index: length].tolist()
 
-            predicted_spans = mrc_decode(sequence_start_prediction,sequence_end_prediction,span_type)
-            gold_spans = mrc_decode(sequence_start_gold_label,sequence_end_gold_label,span_type)
+            predicted_spans = mrc_decode(sequence_start_prediction, sequence_end_prediction, span_type)
+            gold_spans = mrc_decode(sequence_start_gold_label, sequence_end_gold_label, span_type)
 
             for span in predicted_spans:
                 if span in gold_spans:
@@ -65,8 +65,6 @@ class MRCF1Measure(Metric):
 
             for span in gold_spans:
                 self._false_negatives[span[0]] += 1
-
-
 
     @overrides
     def get_metric(self, reset: bool) -> Dict[str, Any]:
@@ -111,5 +109,3 @@ class MRCF1Measure(Metric):
         recall = true_positives / (true_positives + false_negatives + 1e-13)
         f1_measure = 2.0 * (precision * recall) / (precision + recall + 1e-13)
         return precision, recall, f1_measure
-
-

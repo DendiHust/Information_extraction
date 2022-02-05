@@ -1,0 +1,15 @@
+{
+  "DRUG_GROUP": 0,
+  "DRUG_DOSAGE": 1,
+  "FOOD": 2,
+  "DRUG_EFFICACY": 3,
+  "FOOD_GROUP": 4,
+  "SYMPTOM": 5,
+  "DISEASE_GROUP": 6,
+  "SYNDROME": 7,
+  "PERSON_GROUP": 8,
+  "DRUG_TASTE": 9,
+  "DRUG_INGREDIENT": 10,
+  "DRUG": 11,
+  "DISEASE": 12
+}
