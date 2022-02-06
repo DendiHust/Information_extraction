@@ -80,7 +80,7 @@ class EffectGlobalPointer(Model):
             self._hidden_dim = self._encoder.get_output_dim()
         self._feedforward = feedforward
         self._dense_1 = torch.nn.Linear(self._hidden_dim, self._inner_dim * 2)
-        self._dense_2 = torch.nn.Linear(self._hidden_dim, self._label_num * 2)
+        self._dense_2 = torch.nn.Linear(self._inner_dim * 2, self._label_num * 2)
         if dropout:
             self._dropout = torch.nn.Dropout(dropout)
         else:
@@ -154,7 +154,7 @@ class EffectGlobalPointer(Model):
         # (batch_size, seq_len, seq_len)
         logits = torch.einsum('bmd,bnd->bmn', qw, kw) / self._inner_dim ** 0.5
         # (batch_size, 2 * entity_type_size, seq)
-        bias = torch.einsum('bnh->bhn', self._dense_2(seq_out)) / 2
+        bias = torch.einsum('bnh->bhn', self._dense_2(qw_kw)) / 2
         logits = logits[:, None] + bias[:, ::2, None] + bias[:, 1::2, :, None]  # logits[:, None] 增加一个维度
         # (batch_size, entity_type_size, seq_len, seq_len)
         logits = self.add_mask_tril(logits, mask=mask)

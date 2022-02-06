@@ -12,11 +12,11 @@
   "data_loader": {
     "batch_sampler": {
       "type": "bucket",
-      "batch_size": 16
+      "batch_size": 1
     }
   },
-  "train_data_path": "data/raw_data/train.json",
-  "validation_data_path": "data/raw_data/dev.json",
+  "train_data_path": "data/raw_data/tmp.json",
+  "validation_data_path": "data/raw_data/tmp.json",
   "model": {
     "type": "effect_global_pointer",
     "dropout": 0.2,
