@@ -12,7 +12,7 @@ import sys
 
 from allennlp.commands import main
 
-config_file = "scripts/effect_global_pointer.jsonnet"
+config_file = "scripts/biaffine.jsonnet"
 
 # Use overrides to train on CPU.
 overrides = json.dumps({"trainer": {"cuda_device": -1}})

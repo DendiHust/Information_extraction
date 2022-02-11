@@ -115,13 +115,14 @@ class GlobalPointer(Model):
         # pad_mask_h = attention_mask.unsqueeze(1).unsqueeze(-1).expand(batch_size, self.ent_type_size, seq_len, seq_len)
         # pad_mask = pad_mask_v&pad_mask_h
         logits = logits * pad_mask.float() - (1 - pad_mask.float()) * 1e12
-        output_dict = {
-            'logits': logits
-        }
+
         # 排除下三角
         mask = torch.tril(torch.ones_like(logits), -1)
         logits = logits - mask * 1e12
 
+        output_dict = {
+            'logits': logits
+        }
         if labels is not None:
             output_dict['loss'] = self._criterion(logits, labels)
             self._f1(logits, labels)
