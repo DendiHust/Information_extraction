@@ -17,6 +17,7 @@ from allennlp.modules.text_field_embedders import TextFieldEmbedder
 from allennlp.nn.initializers import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from tagging.nn.layer.biaffine_layer import BiaffineLayer
+from tagging.metrics.biafffine_f1_measure import BiaffineMeasure
 import json
 
 
@@ -55,36 +56,13 @@ class Biaffine(Model):
 
         self.__criterion = torch.nn.CrossEntropyLoss()
 
+        self._f1 = BiaffineMeasure(self.__entity_id_dict)
+
         initializer(self)
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        pass
-
-    def sequence_masking(self, x, mask, value='-inf', axis=None):
-        if mask is None:
-            return x
-        else:
-            if value == '-inf':
-                value = -1e12
-            elif value == 'inf':
-                value = 1e12
-            assert axis > 0, 'axis must be greater than 0'
-            for _ in range(axis - 1):
-                mask = torch.unsqueeze(mask, 1)
-            for _ in range(x.ndim - mask.ndim):
-                mask = torch.unsqueeze(mask, mask.ndim)
-            return x * mask + value * (1 - mask)
-
-    def add_mask_tril(self, logits, mask):
-        if mask.dtype != logits.dtype:
-            mask = mask.type(logits.dtype)
-        logits = self.sequence_masking(logits, mask, '-inf', logits.ndim - 2)
-        logits = self.sequence_masking(logits, mask, '-inf', logits.ndim - 1)
-        # 排除下三角
-        mask = torch.tril(torch.ones_like(logits), diagonal=-1)
-        logits = logits - mask * 1e12
-        return logits
+        return self._f1.get_metric(reset)
 
     def forward(self, tokens: Dict[str, Dict[str, torch.Tensor]], labels=None) -> Dict[str, torch.Tensor]:
         mask = get_text_field_mask(tokens)
@@ -102,24 +80,25 @@ class Biaffine(Model):
 
         logits = self.__biaffine_layer(start_out, end_out)
         # padding mask
-        pad_mask = mask.unsqueeze(1).unsqueeze(-1).expand(mask.shape[0], seq_length, seq_length, self.__label_num)
+        pad_mask = mask.unsqueeze(1).unsqueeze(-1).expand(batch_size, seq_length, seq_length, self.__label_num)
         # pad_mask_h = attention_mask.unsqueeze(1).unsqueeze(-1).expand(batch_size, self.ent_type_size, seq_len, seq_len)
         # pad_mask = pad_mask_v&pad_mask_h
-        # 排除下三角
-        pad_mask = torch.tril(pad_mask, -1)
-        logits = logits * pad_mask.float() - (1 - pad_mask.float()) * 1e12
+        # logits = logits * pad_mask.float() - (1 - pad_mask.float()) * 1e12
+        logits = logits * pad_mask.float()
 
         # 排除下三角
-        # mask = torch.tril(torch.ones_like(logits), -1)
-        # logits = logits - mask * 1e12
-
+        mask = torch.tril(torch.ones_like(logits), -1)
+        # # logits = logits - mask * 1e12
+        logits = logits * (1 - mask.float())
 
         output_dict = {
             'logits': logits
         }
 
         if labels is not None:
-
-            output_dict['loss'] = self.__criterion(logits.contiguous().view(size=(-1, self.__label_num)), labels.contiguous().view(size=(-1,)))
+            output_dict['loss'] = self.__criterion(logits.contiguous().view(size=(-1, self.__label_num)),
+                                                   labels.contiguous().view(size=(-1,)))
+            predictions = torch.argmax(logits, dim=-1)
+            self._f1(predictions, labels)
 
         return output_dict
