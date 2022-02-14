@@ -37,26 +37,26 @@ class Biaffine(Model):
                  **kwargs
                  ):
         super(Biaffine, self).__init__(vocab, **kwargs)
-        self.__embedder = embedder
-        self.__biaffine_dim = biaffine_dim
-        self.__label_num = label_num
+        self._embedder = embedder
+        self._biaffine_dim = biaffine_dim
+        self._label_num = label_num
         with open(entity_id_path, mode='r', encoding='utf8') as f:
-            self.__entity_id_dict = json.load(f)
+            self._entity_id_dict = json.load(f)
 
-        self.__encoder = encoder
-        self.__start_encoder = start_encoder
-        self.__end_encoder = end_encoder
+        self._encoder = encoder
+        self._start_encoder = start_encoder
+        self._end_encoder = end_encoder
 
-        self.__biaffine_layer = BiaffineLayer(biaffine_dim, label_num)
+        self._biaffine_layer = BiaffineLayer(biaffine_dim, label_num)
 
         if dropout:
-            self.__dropout = torch.nn.Dropout(dropout)
+            self._dropout = torch.nn.Dropout(dropout)
         else:
-            self.__dropout = None
+            self._dropout = None
 
-        self.__criterion = torch.nn.CrossEntropyLoss()
+        self._criterion = torch.nn.CrossEntropyLoss()
 
-        self._f1 = BiaffineMeasure(self.__entity_id_dict)
+        self._f1 = BiaffineMeasure(self._entity_id_dict)
 
         initializer(self)
 
@@ -66,21 +66,21 @@ class Biaffine(Model):
 
     def forward(self, tokens: Dict[str, Dict[str, torch.Tensor]], labels=None) -> Dict[str, torch.Tensor]:
         mask = get_text_field_mask(tokens)
-        seq_out = self.__embedder(tokens)
+        seq_out = self._embedder(tokens)
 
-        if self.__encoder:
-            seq_out = self.__encoder(seq_out, mask)
-        if self.__dropout:
-            seq_out = self.__dropout(seq_out)
+        if self._encoder:
+            seq_out = self._encoder(seq_out, mask)
+        if self._dropout:
+            seq_out = self._dropout(seq_out)
         batch_size = seq_out.shape[0]
         seq_length = seq_out.shape[1]
 
-        start_out = self.__start_encoder(seq_out)
-        end_out = self.__end_encoder(seq_out)
+        start_out = self._start_encoder(seq_out)
+        end_out = self._end_encoder(seq_out)
 
-        logits = self.__biaffine_layer(start_out, end_out)
+        logits = self._biaffine_layer(start_out, end_out)
         # padding mask
-        pad_mask = mask.unsqueeze(1).unsqueeze(-1).expand(batch_size, seq_length, seq_length, self.__label_num)
+        pad_mask = mask.unsqueeze(1).unsqueeze(-1).expand(batch_size, seq_length, seq_length, self._label_num)
         # pad_mask_h = attention_mask.unsqueeze(1).unsqueeze(-1).expand(batch_size, self.ent_type_size, seq_len, seq_len)
         # pad_mask = pad_mask_v&pad_mask_h
         # logits = logits * pad_mask.float() - (1 - pad_mask.float()) * 1e12
@@ -96,8 +96,8 @@ class Biaffine(Model):
         }
 
         if labels is not None:
-            output_dict['loss'] = self.__criterion(logits.contiguous().view(size=(-1, self.__label_num)),
-                                                   labels.contiguous().view(size=(-1,)))
+            output_dict['loss'] = self._criterion(logits.contiguous().view(size=(-1, self._label_num)),
+                                                  labels.contiguous().view(size=(-1,)))
             predictions = torch.argmax(logits, dim=-1)
             self._f1(predictions, labels)
 

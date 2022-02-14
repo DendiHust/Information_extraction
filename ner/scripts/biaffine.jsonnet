@@ -33,7 +33,7 @@
     },
     "start_encoder":{
       "input_dim": 1536,
-      "num_layers": 3,
+      "num_layers": 1,
       "hidden_dims": 128,
       "activations": "relu",
       "dropout": 0.0
